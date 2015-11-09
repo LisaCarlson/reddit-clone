@@ -1,5 +1,91 @@
 extends layout
 
 block content
-  h1= title
-  p Welcome to #{title}
+  div(ng-controller='MyController')
+    nav.navbar.navbar-default.navbar-static-top
+      .container-fluid
+        // Brand and toggle get grouped for better mobile display
+        .navbar-header
+          button.navbar-toggle.collapsed(type='button', data-toggle='collapse', data-target='#bs-example-navbar-collapse-1', aria-expanded='false')
+            span.sr-only Toggle navigation
+            span.icon-bar
+            span.icon-bar
+            span.icon-bar
+          a.navbar-brand(href='#') Reddit Clone
+        // Collect the nav links, forms, and other content for toggling
+        #bs-example-navbar-collapse-1.collapse.navbar-collapse
+          .navbar-form.navbar-left
+            button.btn.btn-default(ng-click='submitPost()', type='submit')
+              span.glyphicon.glyphicon-plus
+              | Submit Post
+          form.navbar-form.navbar-left(role='search')
+            .form-group
+              input.form-control(ng-model='search', type='text', placeholder='Search')
+          ul.nav.navbar-nav
+            li.dropdown
+              a.dropdown-toggle(href='#', data-toggle='dropdown', role='button', aria-haspopup='true', aria-expanded='false')
+                | Sort By {{selectedItem}}
+                span.caret
+              ul.dropdown-menu
+                li(value='votes', ng-click="sort = '-votes'")
+                  a(ng-click="select('Votes')") Votes
+                li(ng-click="sort = 'time'")
+                  a(ng-click="select('Date')") Date
+    .container
+      .row.margin-bottom.showPostForm(ng-show='showForm', ng-if='showForm')
+        .col-md-6.col-md-offset-3
+          form(name='postForm', novalidate='')
+            h3.text-center.text-info Add a Post
+            label.margin-top(for='title') Title
+            input#title.form-control(ng-class='{invalid: postForm.title.$error.required}', name='title', ng-model='title', type='text', placeholder='title...', required='')
+            p.text-danger(ng-show='postForm.title.$error.required') A title is required
+            label.margin-top(for='author') Author
+            input#author.form-control(ng-class='{invalid: postForm.author.$error.required}', name='author', ng-model='author', type='text', placeholder='author...', required='')
+            p.text-danger(ng-show='postForm.author.$error.required') An author is required
+            label.margin-top(for='image') Image URL
+            input#image.form-control(ng-class='{invalid: postForm.image.$error.required}', name='image', ng-model='image', type='text', placeholder='image url...', required='')
+            p.text-danger(ng-show='postForm.image.$error.required') An image URL is required
+            label.margin-top(for='description') Description
+            input#description.form-control(ng-class='{invalid: postForm.description.$error.required}', name='description', ng-model='description', type='text', placeholder='description...', required='')
+            p.text-danger(ng-show='postForm.description.$error.required') A description is required
+            button.btn.btn-primary.margin-top(ng-disabled='postForm.$invalid', ng-click='addPost(postForm.$valid)') Add Post
+      .row.margin-top.post(ng-repeat='post in posts | orderBy: sort | filter: search')
+        .col-md-12
+          .row
+            .col-md-3
+              .thumbnail
+                img(ng-src='{{post.image}}', alt='...')
+            .col-md-9
+              h4
+                strong.text-info {{post.title}}
+                |  
+                i.glyphicon.glyphicon-thumbs-up.btn(ng-click='post.votes = post.votes+1')
+                i.glyphicon.glyphicon-thumbs-down.btn(ng-click='post.votes = post.votes-1')
+                span.votes(ng-class='{red: post.votes < 0, green: post.votes > 0 }')
+                  | {{post.votes}}
+                  span
+              p.pull-right.text-warning By {{post.author}}
+              p {{post.description}}
+              p
+                i.glyphicon.glyphicon-calendar
+                |  {{post.time | amCalendar}} 
+                i.glyphicon.glyphicon-comment.btn(ng-click='thisComment = !thisComment')
+                |  {{post.comments.length}} 
+                ng-pluralize(count='post.comments.length', when="{'0': 'comments', \
+                '1': 'comment', \
+                'other': 'comments'}")
+                |  
+                i.glyphicon.glyphicon-pencil.btn(ng-click='commentForm = !commentForm')
+                |  Add Comment
+              p.animate-if(ng-show='thisComment', ng-model='thisComment', ng-if='thisComment', ng-repeat='comment in post.comments')
+                strong {{comment.author}}
+                |  said 
+                span.text-info "{{comment.content}}"
+              form.showCommentForm(name='addComment', ng-show='commentForm', ng-if='commentForm', novalidate='')
+                label
+                  | Name: 
+                  input.form-control(ng-class='{commentInvalid: addComment.name.$invalid}', ng-model='commentAuthor', type='text', name='name', required='')
+                label
+                  | Comment: 
+                  input.form-control(ng-class='{commentInvalid: addComment.comment.$invalid}', ng-model='commentBody', type='text', name='comment', required='')
+                button.btn.btn-warning(ng-disabled='addComment.$invalid', ng-click='submitComment()') Submit
